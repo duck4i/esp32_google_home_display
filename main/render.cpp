@@ -10,33 +10,33 @@
 #define LCD_WIDTH 135
 #define LCD_HEIGHT 240
 
-struct devices
+struct devices_t
 {
     DisplayDevice lcd{LCD_WIDTH, LCD_HEIGHT};
     LvglDevice lvgl{LCD_WIDTH, LCD_HEIGHT};
 };
-devices dev{};
+devices_t devices{};
 
-struct components
+struct components_t
 {
     lv_obj_t *tab;
     uint tab_index = 0;
 };
-components ui{};
+components_t ui{};
 
-void setActiveTab(uint index)
+void ui_set_active_tab(uint index)
 {
     ui.tab_index = index;
     lv_tabview_set_active(ui.tab, index, LV_ANIM_ON);
 }
 
-void toggleActiveTab()
+void ui_toggle_active_tab()
 {
     uint index = (ui.tab_index + 1) % 2;
-    setActiveTab(index);
+    ui_set_active_tab(index);
 }
 
-void setupComponents()
+void ui_setup_components()
 {
     lv_obj_t *scr = lv_scr_act();
 
@@ -58,16 +58,16 @@ void setupComponents()
     lv_obj_align(lblSettings, LV_ALIGN_CENTER, 0, 0);
 }
 
-FORCE_INLINE_ATTR void flushDisplay(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
+FORCE_INLINE_ATTR void render_flush_display(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
 {
     auto w = (area->x2 - area->x1 + 1);
     auto h = (area->y2 - area->y1 + 1);
     uint32_t size = w * h;
 
-    dev.lcd.startWrite();                            /* Start new TFT transaction */
-    dev.lcd.setAddrWindow(area->x1, area->y1, w, h); /* set the working window */
-    dev.lcd.writePixels((uint16_t *)px_map, size, true);
-    dev.lcd.endWrite(); /* terminate TFT transaction */
+    devices.lcd.startWrite();                            /* Start new TFT transaction */
+    devices.lcd.setAddrWindow(area->x1, area->y1, w, h); /* set the working window */
+    devices.lcd.writePixels((uint16_t *)px_map, size, true);
+    devices.lcd.endWrite(); /* terminate TFT transaction */
 
     lv_display_flush_ready(display); /* tell lvgl that flushing is done */
 }
@@ -76,26 +76,26 @@ void ghome_render_init()
 {
     ESP_LOGI(TAG, "GHOME render init");
 
-    dev.lcd.init();
+    devices.lcd.init();
     //dev.lcd.fillScreen(TFT_ORANGE);
     ESP_LOGI(TAG, "PANEL_INIT_DONE");
 
-    dev.lvgl.init(flushDisplay);
+    devices.lvgl.init(render_flush_display);
     ESP_LOGI(TAG, "LGLV_INIT_DONE");
 
-    setupComponents();
+    ui_setup_components();
 }
 
 void ghome_render_update()
 {
     static DebouncedButton button(GPIO_NUM_0, GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_ENABLE, 100, true);
 
-    button.Step(dev.lvgl.getTick());
+    button.Step(devices.lvgl.getTick());
     if (button.Pressed())
     {
         ESP_LOGI(TAG, "Button pressed");
-        toggleActiveTab();
+        ui_toggle_active_tab();
     }
 
-    dev.lvgl.update();
+    devices.lvgl.update();
 }

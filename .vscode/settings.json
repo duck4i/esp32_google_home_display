@@ -12,6 +12,7 @@
         "render.h": "c",
         "compare": "cpp",
         "cstdint": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "matter.h": "c"
     }
 }
