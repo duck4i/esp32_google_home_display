@@ -7,6 +7,11 @@
 #include <esp_matter_ota.h>
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
+#include <setup_payload/SetupPayload.h>
+#include <platform/CommissionableDataProvider.h>
+#include <platform/DeviceInstanceInfoProvider.h>
+#include <setup_payload/QRCodeSetupPayloadGenerator.h>
+#include <lib/support/CodeUtils.h>
 
 #define TAG "GHOME_MATTER"
 
@@ -37,6 +42,38 @@ static const char *s_decryption_key = decryption_key_start;
 static const uint16_t s_decryption_key_len = decryption_key_end - decryption_key_start;
 #endif // CONFIG_ENABLE_ENCRYPTED_OTA
 
+static void get_setup_code(void)
+{
+    uint32_t setupCode = 0;
+    uint32_t pinCode = 0;
+
+    CHIP_ERROR err = chip::DeviceLayer::GetCommissionableDataProvider()->GetSetupPasscode(setupCode);
+    if (err == CHIP_NO_ERROR)
+    {
+        ESP_LOGI(TAG, "Setup code retrieved from commissionable data provider: %lu", setupCode);
+
+        chip::SetupPayload payload;
+        payload.setUpPINCode = setupCode;
+
+        std::string qrCode;
+        chip::QRCodeSetupPayloadGenerator generator(payload);
+        err = generator.payloadBase38Representation(qrCode);
+
+        if (err == CHIP_NO_ERROR)
+        {
+            ESP_LOGI(TAG, "QR code: %s", qrCode.c_str());
+        }
+        else
+        {
+            ESP_LOGE(TAG, "Failed to generate QR code: %s", chip::ErrorStr(err));
+        }
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Failed to retrieve setup code from commissionable data provider: %s", chip::ErrorStr(err));
+    }
+}
+
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 {
     switch (event->Type)
@@ -63,6 +100,7 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 
     case chip::DeviceLayer::DeviceEventType::kCommissioningWindowOpened:
         ESP_LOGI(TAG, "Commissioning window opened");
+        get_setup_code();
         break;
 
     case chip::DeviceLayer::DeviceEventType::kCommissioningWindowClosed:
@@ -101,7 +139,7 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 static esp_err_t app_identification_cb(identification::callback_type_t type, uint16_t endpoint_id, uint8_t effect_id,
                                        uint8_t effect_variant, void *priv_data)
 {
-    ESP_LOGI(TAG, "Identification callback: type: %u, effect: %u, variant: %u", type, effect_id, effect_variant);
+    ESP_LOGI(TAG, "[CBC] Identification callback: type: %u, effect: %u, variant: %u", type, effect_id, effect_variant);
     return ESP_OK;
 }
 
@@ -118,7 +156,7 @@ static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16
         /* Driver update */
         // app_driver_handle_t driver_handle = (app_driver_handle_t)priv_data;
         // err = app_driver_attribute_update(driver_handle, endpoint_id, cluster_id, attribute_id, val);
-        ESP_LOGI(TAG, "Attribute update callback: type: %u, cluster: %lu, attribute: %lu", type, cluster_id, attribute_id);
+        ESP_LOGI(TAG, "[CBC] Attribute update callback: type: %u, cluster: %lu, attribute: %lu", type, cluster_id, attribute_id);
     }
 
     return err;
