@@ -16,4 +16,3 @@ dependencies:
   #   public: true
   m5stack/m5gfx: ^0.2.6
   lvgl/lvgl: ^9.2.2
-  supcik/debounced_button: ^1.0.0
