@@ -1,0 +1,37 @@
+dependencies:
+  idf:
+    source:
+      type: idf
+    version: 5.5.0
+  lvgl/lvgl:
+    component_hash: 096c69af22eaf8a2b721e3913da91918c5e6bf1a762a113ec01f401aa61337a0
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 9.2.2
+  m5stack/m5gfx:
+    component_hash: fb1ee0423582dd0e26f9467221e9a38249403f7c8912094047d0a1deabcc7413
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 0.2.6
+  supcik/debounced_button:
+    component_hash: 310f92309ea99f95f63266c310de5ec28d4cb752f0a42ab31b60f2ce1ef7fd8f
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.3'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.0.0
+direct_dependencies:
+- idf
+- lvgl/lvgl
+- m5stack/m5gfx
+- supcik/debounced_button
+manifest_hash: e7a181c915d3bb1a3efa2f60a13693d8da43a5bf827cd632f01c8686d652fce6
+target: esp32
+version: 2.0.0
