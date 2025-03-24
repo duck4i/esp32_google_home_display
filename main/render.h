@@ -7,6 +7,7 @@ extern "C"
 #endif
 
 void ghome_render_init();
+void ghome_render_update();
 
 #ifdef __cplusplus
 }

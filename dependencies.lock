@@ -3,6 +3,13 @@ dependencies:
     source:
       type: idf
     version: 5.5.0
+  lvgl/lvgl:
+    component_hash: 096c69af22eaf8a2b721e3913da91918c5e6bf1a762a113ec01f401aa61337a0
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 9.2.2
   m5stack/m5gfx:
     component_hash: fb1ee0423582dd0e26f9467221e9a38249403f7c8912094047d0a1deabcc7413
     dependencies: []
@@ -12,7 +19,8 @@ dependencies:
     version: 0.2.6
 direct_dependencies:
 - idf
+- lvgl/lvgl
 - m5stack/m5gfx
-manifest_hash: 51d099290834f0f83c6e14830ab7f1c4bfae1381adba57f9f030bba5ffa03cb8
+manifest_hash: 7ff0b2191c8ac8f05a6fa5f1b70cac7fb196ae33ae8423d533fd8adb48ae7590
 target: esp32
 version: 2.0.0
