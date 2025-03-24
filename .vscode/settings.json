@@ -9,6 +9,9 @@
     "idf.toolsPath": "/opt/esp",
     "idf.flashType": "UART",
     "files.associations": {
-        "render.h": "c"
+        "render.h": "c",
+        "compare": "cpp",
+        "cstdint": "cpp",
+        "*.tcc": "cpp"
     }
 }
