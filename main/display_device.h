@@ -11,6 +11,7 @@ class DisplayDevice : public lgfx::LGFX_Device
 {
 public:
     DisplayDevice(uint16_t width, uint16_t height);
+    virtual ~DisplayDevice() = default;
     
 private:
     lgfx::Panel_ST7789 m_panel;

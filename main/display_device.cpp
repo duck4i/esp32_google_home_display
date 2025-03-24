@@ -1,4 +1,7 @@
 #include "display_device.h"
+#include <esp_log.h>
+
+#define TAG "DISPLAY_DEVICE"
 
 #ifdef LCD_TYPE_ST7789_SPI
 #define LCD_MOSI 23
@@ -11,6 +14,8 @@
 
 DisplayDevice::DisplayDevice(uint16_t width, uint16_t height)
 {
+    ESP_LOGI(TAG, "DisplayDevice constructor");
+
 #if defined(LCD_TYPE_ST7789_SPI)
 
     //  Configure bus
