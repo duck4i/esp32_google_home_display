@@ -1,3 +1,0 @@
-dependencies:
-  debounced_button:
-    override_path: "../../../"
