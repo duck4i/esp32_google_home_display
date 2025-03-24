@@ -1,5 +1,6 @@
 #include "render.h"
 #include <esp_log.h>
+
 #define TAG "GHOME_RENDER"
 
 #define LCD_WIDTH 135
