@@ -1,0 +1,9 @@
+dependencies:
+  idf: '>=5.3'
+description: Debounced Button component for ESP-IDF
+license: MIT
+maintainers:
+- Jacques Supcik <jacques@supcik.net>
+repository: https://github.com/supcik/idf-debounced-button.git
+url: https://github.com/supcik/idf-debounced-button/tree/main/debounced_button
+version: 1.0.0

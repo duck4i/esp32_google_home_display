@@ -4,7 +4,9 @@
 #include "lgfx/v1/LGFXBase.hpp"
 #include "lgfx/v1/panel/Panel_ST7789.hpp"
 #include "lgfx/v1/platforms/device.hpp"
-#include <demos/lv_demos.h>
+#include <debounced_button.hpp>
+
+// #include <demos/lv_demos.h>
 
 #define TAG "GHOME_RENDER"
 
@@ -101,27 +103,42 @@ FORCE_INLINE_ATTR void lv_disp_flush(lv_display_t *display, const lv_area_t *are
 
 FORCE_INLINE_ATTR void lv_input_read(lv_indev_t *indev, lv_indev_data_t *data)
 {
-    /*For example  ("my_..." functions needs to be implemented by you)
-      int32_t x, y;
-      bool touched = my_get_touch( &x, &y );
-
-      if(!touched) {
-          data->state = LV_INDEV_STATE_RELEASED;
-      } else {
-          data->state = LV_INDEV_STATE_PRESSED;
-
-          data->point.x = x;
-          data->point.y = y;
-      }
-       */
 }
+
+struct components
+{
+    lv_obj_t *tab;
+
+    uint tab_index = 0;
+    void changeTab(uint index)
+    {
+        tab_index = index;
+        lv_tabview_set_active(tab, tab_index, LV_ANIM_ON);
+    }
+};
+
+components ui{};
 
 void lv_setup_components()
 {
     lv_obj_t *scr = lv_scr_act();
-    lv_obj_t *label = lv_label_create(scr);
-    lv_label_set_text(label, "Hello World");
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t *tab = lv_tabview_create(scr);
+    lv_tabview_set_tab_bar_position(tab, LV_DIR_TOP);
+    lv_tabview_set_tab_bar_size(tab, 32);
+    ui.tab = tab;
+    ui.tab_index = 0;
+
+    lv_obj_t *tabHome = lv_tabview_add_tab(tab, "Home");
+    lv_obj_t *tabSettings = lv_tabview_add_tab(tab, "Settings");
+
+    lv_obj_t *lblHello = lv_label_create(tabHome);
+    lv_label_set_text(lblHello, "Hello World");
+    lv_obj_align(lblHello, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t *lblSettings = lv_label_create(tabSettings);
+    lv_label_set_text(lblSettings, "Settings");
+    lv_obj_align(lblSettings, LV_ALIGN_CENTER, 0, 0);
 }
 
 void ghome_render_init()
@@ -171,12 +188,22 @@ void ghome_render_init()
 
     ESP_LOGI(TAG, "LVGL_INIT_DONE");
 
-    //lv_demo_widgets();
-    //lv_demo_widgets_start_slideshow();
+    // lv_demo_widgets();
+    // lv_demo_widgets_start_slideshow();
     lv_setup_components();
 }
 
 void ghome_render_update()
 {
+    static DebouncedButton button(GPIO_NUM_0, GPIO_PULLDOWN_DISABLE, GPIO_PULLUP_ENABLE, 100, true);
+
+    button.Step(lv_tick());
+    if (button.Pressed())
+    {
+        ESP_LOGI(TAG, "Button pressed");
+        ui.tab_index = (ui.tab_index + 1) % 2;
+        ui.changeTab(ui.tab_index);
+    }
+
     lv_timer_handler();
 }
