@@ -7,5 +7,8 @@
     ],
     "idf.port": "/dev/ttyUSB0",
     "idf.toolsPath": "/home/duck/.espressif",
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "files.associations": {
+        "render.h": "c"
+    }
 }

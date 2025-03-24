@@ -2,11 +2,16 @@
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "render.h"
 
-const char *TAG = "GHOME";
+#define TAG "GHOME"
 
 void ghome_task(void *pvParameter)
 {
+    ESP_LOGI(TAG, "GHOME task started.");
+
+    ghome_render_init();
+
     while (1)
     {
         ESP_LOGI(TAG, "GHOME task is running");
