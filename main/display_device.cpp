@@ -22,7 +22,7 @@ DisplayDevice::DisplayDevice(uint16_t width, uint16_t height)
     auto bcfg = m_bus.config();
 
     // SPI bus pins
-    bcfg.spi_host = HSPI_HOST;
+    //bcfg.spi_host = HSPI_HOST;
     bcfg.spi_mode = 0;
     // bcfg.freq_write = 40000000; // 40MHz
     // bcfg.freq_read = 16000000;  // 16MHz
