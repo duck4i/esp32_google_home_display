@@ -1,12 +1,12 @@
 {
     "C_Cpp.intelliSenseEngine": "default",
-    "idf.espIdfPath": "/home/duck/esp/v5.3.2/esp-idf",
+    "idf.espIdfPath": "/opt/esp/idf",
     "idf.pythonInstallPath": "/usr/bin/python3",
     "idf.openOcdConfigs": [
         "board/esp32-wrover-kit-3.3v.cfg"
     ],
     "idf.port": "/dev/ttyUSB0",
-    "idf.toolsPath": "/home/duck/.espressif",
+    "idf.toolsPath": "/opt/esp",
     "idf.flashType": "UART",
     "files.associations": {
         "render.h": "c"
