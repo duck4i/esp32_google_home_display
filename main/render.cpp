@@ -77,7 +77,7 @@ void ghome_render_init()
     ESP_LOGI(TAG, "GHOME render init");
 
     dev.lcd.init();
-    dev.lcd.fillScreen(TFT_ORANGE);
+    //dev.lcd.fillScreen(TFT_ORANGE);
     ESP_LOGI(TAG, "PANEL_INIT_DONE");
 
     dev.lvgl.init(flushDisplay);
