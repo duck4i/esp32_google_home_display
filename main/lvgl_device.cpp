@@ -4,6 +4,7 @@
 #include <esp_heap_caps.h>
 
 #define TAG "LVGL_DEVICE"
+#define LCD_PARTIAL_RENDER_ALLOC 4
 
 FORCE_INLINE_ATTR void lv_input_read(lv_indev_t *indev, lv_indev_data_t *data)
 {
@@ -41,8 +42,8 @@ void LvglDevice::init(lv_display_flush_cb_t flush_cb)
     lv_display_set_flush_cb(m_display, flush_cb);
     ESP_LOGI(TAG, "LVGL_DISPLAY_DONE");
 
-    size_t size = m_width * m_height * (LV_COLOR_DEPTH / 8);
-    m_draw_buffer = (uint32_t *)heap_caps_aligned_alloc(4, size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    size_t size = m_width * m_height * (LV_COLOR_DEPTH / 8) / LCD_PARTIAL_RENDER_ALLOC;
+    m_draw_buffer = (uint32_t *)heap_caps_aligned_alloc(4, size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (m_draw_buffer == nullptr)
     {
         ESP_LOGE(TAG, "Failed to allocate draw buffer");

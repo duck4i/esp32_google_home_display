@@ -1,16 +1,11 @@
-#ifndef GHOME_RENDER_H
-#define GHOME_RENDER_H
+#pragma once
+#include <cstdint>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+typedef struct { 
+    int16_t tab_index;
+    int16_t brightness;
+    bool led_on;
+} render_ui_state_t;
 
 void ghome_render_init();
 void ghome_render_update();
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
