@@ -13,6 +13,7 @@
 #include <setup_payload/QRCodeSetupPayloadGenerator.h>
 #include <setup_payload/ManualSetupPayloadGenerator.h>
 #include <lib/support/CodeUtils.h>
+#include "matter_callback.h"
 
 #define TAG "GHOME_MATTER"
 
@@ -208,6 +209,21 @@ static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16
         /* Driver update */
         // app_driver_handle_t driver_handle = (app_driver_handle_t)priv_data;
         // err = app_driver_attribute_update(driver_handle, endpoint_id, cluster_id, attribute_id, val);
+        //esp_matter_val_type_t val_type = val->type;
+
+        if (cluster_id == OnOff::Id && attribute_id == OnOff::Attributes::OnOff::Id)
+        {
+            ESP_LOGI(TAG, "[CBC] We got a boolean value: for type %u cluster %lu attribute: %lu -> %d", type, cluster_id, attribute_id, val->val.b);
+            matter_ui_update_msg_t msg = {LIGHT_ON_CHANGE, val->val.b == 1};
+            ghome_matter_events_enqueue(msg);
+        }
+        else if (cluster_id == LevelControl::Id && attribute_id == LevelControl::Attributes::CurrentLevel::Id)
+        {
+            ESP_LOGI(TAG, "[CBC] We got a int16_t level value: for type %u cluster %lu attribute: %lu -> %d", type, cluster_id, attribute_id, val->val.i16);
+            matter_ui_update_msg_t msg = {BRIGTHNESS_CHANGE, val->val.i16};
+            ghome_matter_events_enqueue(msg);
+        }
+
         ESP_LOGI(TAG, "[CBC] Attribute update callback: type: %u, cluster: %lu, attribute: %lu", type, cluster_id, attribute_id);
     }
 
@@ -262,7 +278,7 @@ bool ghome_matter_init()
         state.light_endpoint_id = endpoint::get_id(state.light_endpoint);
         ESP_LOGI(TAG, "Light created with endpoint_id %d", state.light_endpoint_id);
 
-        /* Mark deferred persistence for some attributes that might be changed rapidly */
+        /* Mark deferred persistence for some attributes that might be changed rapidly 
         attribute_t *current_level_attribute = attribute::get(state.light_endpoint_id, LevelControl::Id, LevelControl::Attributes::CurrentLevel::Id);
         attribute::set_deferred_persistence(current_level_attribute);
 
@@ -274,6 +290,7 @@ bool ghome_matter_init()
         attribute::set_deferred_persistence(color_temp_attribute);
 
         ESP_LOGI(TAG, "Deferred persistence set for some attributes");
+        */
 
         err = esp_matter::start(app_event_cb);
         if (err != ESP_OK)

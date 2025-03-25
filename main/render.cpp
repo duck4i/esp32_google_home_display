@@ -3,6 +3,7 @@
 #include <lvgl.h>
 #include "display_device.h"
 #include "lvgl_device.h"
+#include "matter_callback.h"
 #include <debounced_button.hpp>
 
 #define TAG "GHOME_RENDER"
@@ -19,8 +20,11 @@ devices_t devices{};
 
 struct components_t
 {
-    lv_obj_t *tab;
-    uint tab_index = 0;
+    uint tab_index{0};
+    bool led_on{false};
+    lv_obj_t *tab{nullptr};
+    lv_obj_t *pinOnOff{nullptr};
+    lv_obj_t *brightnessArc{nullptr};
 };
 components_t ui{};
 
@@ -36,6 +40,24 @@ void ui_toggle_active_tab()
     ui_set_active_tab(index);
 }
 
+void ui_set_pin_state(bool state)
+{
+    if (ui.pinOnOff == nullptr)
+        return;
+    ui.led_on = state;
+    if (state)
+        lv_led_on(ui.pinOnOff);
+    else
+        lv_led_off(ui.pinOnOff);
+}
+
+void ui_update_brightness(uint16_t value)
+{
+    if (ui.brightnessArc == nullptr)
+        return;
+    lv_arc_set_value(ui.brightnessArc, ui.led_on == false ? 0 : value);
+}
+
 void ui_setup_components()
 {
     lv_obj_t *scr = lv_scr_act();
@@ -49,9 +71,14 @@ void ui_setup_components()
     lv_obj_t *tabHome = lv_tabview_add_tab(tab, "Home");
     lv_obj_t *tabSettings = lv_tabview_add_tab(tab, "Settings");
 
-    lv_obj_t *lblHello = lv_label_create(tabHome);
-    lv_label_set_text(lblHello, "Hello World");
-    lv_obj_align(lblHello, LV_ALIGN_CENTER, 0, 0);
+    ui.pinOnOff = lv_led_create(tabHome);
+    lv_led_set_color(ui.pinOnOff, lv_color_make(0, 255, 0));
+    lv_obj_align(ui.pinOnOff, LV_ALIGN_TOP_RIGHT, 5, 0);
+    lv_obj_set_size(ui.pinOnOff, 12, 12);
+
+    ui.brightnessArc = lv_arc_create(tabHome);
+    lv_arc_set_range(ui.brightnessArc, 0, 255);
+    lv_obj_center(ui.brightnessArc);
 
     lv_obj_t *lblSettings = lv_label_create(tabSettings);
     lv_label_set_text(lblSettings, "Settings");
@@ -72,12 +99,28 @@ FORCE_INLINE_ATTR void render_flush_display(lv_display_t *display, const lv_area
     lv_display_flush_ready(display); /* tell lvgl that flushing is done */
 }
 
+void matter_event_callback(const matter_ui_update_msg_t &msg)
+{
+    ESP_LOGI(TAG, "Matter event: %d Value: %d", msg.state_type, msg.value);
+    switch (msg.state_type)
+    {
+    case LIGHT_ON_CHANGE:
+        ui_set_pin_state(msg.value == true);
+        break;
+    case BRIGTHNESS_CHANGE:
+        ui_update_brightness(msg.value);
+        break;
+    default:
+        break;
+    };
+}
+
 void ghome_render_init()
 {
     ESP_LOGI(TAG, "GHOME render init");
 
     devices.lcd.init();
-    //dev.lcd.fillScreen(TFT_ORANGE);
+    // dev.lcd.fillScreen(TFT_ORANGE);
     ESP_LOGI(TAG, "PANEL_INIT_DONE");
 
     devices.lvgl.init(render_flush_display);
@@ -97,5 +140,6 @@ void ghome_render_update()
         ui_toggle_active_tab();
     }
 
+    ghome_matter_events_consume(matter_event_callback);
     devices.lvgl.update();
 }
