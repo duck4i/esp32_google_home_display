@@ -4,7 +4,7 @@
 #include <esp_heap_caps.h>
 
 #define TAG "LVGL_DEVICE"
-#define LCD_PARTIAL_RENDER_ALLOC 2
+#define LCD_PARTIAL_RENDER_ALLOC 4
 
 FORCE_INLINE_ATTR void lv_input_read(lv_indev_t *indev, lv_indev_data_t *data)
 {
