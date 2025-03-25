@@ -28,7 +28,7 @@ void matter_task(void *pvParameter)
 
     while (1)
     {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
@@ -36,6 +36,6 @@ extern "C" void app_main(void)
 {
     ESP_LOGI(TAG, "Starting GHOME systems");
 
-    xTaskCreate(render_task, "ghome_task", 9048, NULL, 5, NULL);
-    xTaskCreate(matter_task, "matter_task", 4096, NULL, 5, NULL);
+    xTaskCreate(render_task, "render_task", 9048, NULL, 5, NULL);
+    xTaskCreate(matter_task, "matter_task", 4096, NULL, 3, NULL);
 }

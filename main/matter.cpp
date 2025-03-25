@@ -11,6 +11,7 @@
 #include <platform/CommissionableDataProvider.h>
 #include <platform/DeviceInstanceInfoProvider.h>
 #include <setup_payload/QRCodeSetupPayloadGenerator.h>
+#include <setup_payload/ManualSetupPayloadGenerator.h>
 #include <lib/support/CodeUtils.h>
 
 #define TAG "GHOME_MATTER"
@@ -42,36 +43,87 @@ static const char *s_decryption_key = decryption_key_start;
 static const uint16_t s_decryption_key_len = decryption_key_end - decryption_key_start;
 #endif // CONFIG_ENABLE_ENCRYPTED_OTA
 
+//
+//  Generate QR code with https://github.com/project-chip/connectedhomeip/tree/master/src/setup_payload/python
+//
 static void get_setup_code(void)
 {
     uint32_t setupCode = 0;
-    uint32_t pinCode = 0;
+    uint16_t setupDescriminator = 0;
 
     CHIP_ERROR err = chip::DeviceLayer::GetCommissionableDataProvider()->GetSetupPasscode(setupCode);
     if (err == CHIP_NO_ERROR)
     {
         ESP_LOGI(TAG, "Setup code retrieved from commissionable data provider: %lu", setupCode);
 
+        err = chip::DeviceLayer::GetCommissionableDataProvider()->GetSetupDiscriminator(setupDescriminator);
+        if (err != CHIP_NO_ERROR)
+        {
+            ESP_LOGE(TAG, "Failed to retrieve setup discriminator from commissionable data provider: %s", chip::ErrorStr(err));
+            return;
+        }
+
+        ESP_LOGI(TAG, "Setup discriminator retrieved from commissionable data provider: %u", setupDescriminator);
+
+        uint16_t product_id, vendor_id;
+        err = chip::DeviceLayer::GetDeviceInstanceInfoProvider()->GetProductId(product_id);
+        err = chip::DeviceLayer::GetDeviceInstanceInfoProvider()->GetVendorId(vendor_id);
+
+        ESP_LOGI(TAG, "Product ID: %u, Vendor ID: %u", product_id, vendor_id);
+
         chip::SetupPayload payload;
         payload.setUpPINCode = setupCode;
+        payload.discriminator.SetLongValue(setupDescriminator);
+        payload.productID = product_id;
+        payload.vendorID = vendor_id;
+        // payload.version = 1;
 
-        std::string qrCode;
-        chip::QRCodeSetupPayloadGenerator generator(payload);
-        err = generator.payloadBase38Representation(qrCode);
-
+        std::string manual_pairing_code;
+        chip::ManualSetupPayloadGenerator manualGenerator(payload);
+        err = manualGenerator.payloadDecimalStringRepresentation(manual_pairing_code);
         if (err == CHIP_NO_ERROR)
         {
-            ESP_LOGI(TAG, "QR code: %s", qrCode.c_str());
+            ESP_LOGI(TAG, "Manual pairing code: %s", manual_pairing_code.c_str());
+        }
+        else
+        {
+            ESP_LOGE(TAG, "Failed to generate manual pairing code: %s", chip::ErrorStr(err));
+        }
+
+#if 0
+        std::string qr_code;
+        //qr_code.reserve(51200);
+        
+        chip::QRCodeSetupPayloadGenerator qr_generator(payload);
+        err = qr_generator.payloadBase38Representation(qr_code);
+        if (err == CHIP_NO_ERROR)
+        {
+            ESP_LOGI(TAG, "QR code: %s", qr_code.c_str());
         }
         else
         {
             ESP_LOGE(TAG, "Failed to generate QR code: %s", chip::ErrorStr(err));
         }
+#endif
     }
     else
     {
         ESP_LOGE(TAG, "Failed to retrieve setup code from commissionable data provider: %s", chip::ErrorStr(err));
     }
+}
+
+static bool is_provisioned(void)
+{
+    return chip::DeviceLayer::ConfigurationMgr().IsFullyProvisioned();
+}
+
+static void reset_provisioning(void)
+{
+    ESP_LOGW(TAG, "Resetting provisioning - nvs flash erase");
+    nvs_flash_erase();
+    ESP_LOGW(TAG, "Resetting provisioning - InitiateFactoryReset");
+    chip::DeviceLayer::ConfigurationMgr().InitiateFactoryReset();
+    ESP_LOGW(TAG, "Factory reset completed");
 }
 
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
@@ -230,6 +282,11 @@ bool ghome_matter_init()
             break;
         }
         ESP_LOGI(TAG, "Matter started");
+
+        if (is_provisioned())
+        {
+            ESP_LOGI(TAG, "Device is already provisioned");
+        }
 
 #if CONFIG_ENABLE_CHIP_SHELL
         esp_matter::console::diagnostics_register_commands();
