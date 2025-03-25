@@ -21,10 +21,11 @@ devices_t devices{};
 struct components_t
 {
     uint tab_index{0};
-    bool led_on{false};
+    bool led_on{true};
+    int16_t brightness{255};
     lv_obj_t *tab{nullptr};
-    lv_obj_t *pinOnOff{nullptr};
-    lv_obj_t *brightnessArc{nullptr};
+    lv_obj_t *color_pin{nullptr};
+    lv_obj_t *brightness_arc{nullptr};
 };
 components_t ui{};
 
@@ -42,20 +43,41 @@ void ui_toggle_active_tab()
 
 void ui_set_pin_state(bool state)
 {
-    if (ui.pinOnOff == nullptr)
-        return;
     ui.led_on = state;
     if (state)
-        lv_led_on(ui.pinOnOff);
+    {
+        lv_led_on(ui.color_pin);
+        lv_led_set_brightness(ui.color_pin, ui.brightness);
+    }
     else
-        lv_led_off(ui.pinOnOff);
+    {
+        lv_led_off(ui.color_pin);
+        lv_led_set_brightness(ui.color_pin, 0);
+    }
+}
+
+void ui_animate_brightness(uint16_t value, uint32_t duration = 125)
+{
+    static lv_anim_t *brightness_anim = nullptr;
+    if (brightness_anim != nullptr)
+    {
+        lv_anim_delete(brightness_anim, nullptr);
+    }
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, ui.brightness_arc);
+    lv_anim_set_values(&a, lv_arc_get_value(ui.brightness_arc), value);
+    lv_anim_set_time(&a, duration); // Animation duration in milliseconds
+    lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_arc_set_value);
+    brightness_anim = lv_anim_start(&a);
 }
 
 void ui_update_brightness(uint16_t value)
 {
-    if (ui.brightnessArc == nullptr)
-        return;
-    lv_arc_set_value(ui.brightnessArc, ui.led_on == false ? 0 : value);
+    uint16_t v = ui.led_on ? value : 0;
+    ui.brightness = v;
+    lv_led_set_brightness(ui.color_pin, v);
+    ui_animate_brightness(v);
 }
 
 void ui_setup_components()
@@ -71,14 +93,20 @@ void ui_setup_components()
     lv_obj_t *tabHome = lv_tabview_add_tab(tab, "Home");
     lv_obj_t *tabSettings = lv_tabview_add_tab(tab, "Settings");
 
-    ui.pinOnOff = lv_led_create(tabHome);
-    lv_led_set_color(ui.pinOnOff, lv_color_make(0, 255, 0));
-    lv_obj_align(ui.pinOnOff, LV_ALIGN_TOP_RIGHT, 5, 0);
-    lv_obj_set_size(ui.pinOnOff, 12, 12);
+    ui.color_pin = lv_led_create(tabHome);
+    lv_led_set_color(ui.color_pin, lv_color_make(0, 255, 0));
+    lv_obj_set_size(ui.color_pin, 48, 48);
+    lv_obj_center(ui.color_pin);
 
-    ui.brightnessArc = lv_arc_create(tabHome);
-    lv_arc_set_range(ui.brightnessArc, 0, 255);
-    lv_obj_center(ui.brightnessArc);
+    if (ui.led_on)
+        lv_led_on(ui.color_pin);
+    else
+        lv_led_off(ui.color_pin);
+
+    ui.brightness_arc = lv_arc_create(tabHome);
+    lv_arc_set_range(ui.brightness_arc, 0, 255);
+    lv_obj_center(ui.brightness_arc);
+    ui_animate_brightness(ui.brightness, 1000);
 
     lv_obj_t *lblSettings = lv_label_create(tabSettings);
     lv_label_set_text(lblSettings, "Settings");
@@ -99,9 +127,21 @@ FORCE_INLINE_ATTR void render_flush_display(lv_display_t *display, const lv_area
     lv_display_flush_ready(display); /* tell lvgl that flushing is done */
 }
 
+/*
+Turn on:
+W (184666) GHOME_RENDER: Matter event: 0 Value: 1
+W (184916) GHOME_RENDER: Matter event: 1 Value: 1
+W (184916) GHOME_RENDER: Matter event: 1 Value: 135
+
+Turn off:
+W (87996) GHOME_RENDER: Matter event: 1 Value: 1
+W (88086) GHOME_RENDER: Matter event: 0 Value: 0
+W (88156) GHOME_RENDER: Matter event: 1 Value: 254
+*/
+
 void matter_event_callback(const matter_ui_update_msg_t &msg)
 {
-    ESP_LOGI(TAG, "Matter event: %d Value: %d", msg.state_type, msg.value);
+    ESP_LOGW(TAG, "Matter event: %d Value: %d", msg.state_type, msg.value);
     switch (msg.state_type)
     {
     case LIGHT_ON_CHANGE:
