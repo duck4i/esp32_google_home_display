@@ -127,18 +127,6 @@ FORCE_INLINE_ATTR void render_flush_display(lv_display_t *display, const lv_area
     lv_display_flush_ready(display); /* tell lvgl that flushing is done */
 }
 
-/*
-Turn on:
-W (184666) GHOME_RENDER: Matter event: 0 Value: 1
-W (184916) GHOME_RENDER: Matter event: 1 Value: 1
-W (184916) GHOME_RENDER: Matter event: 1 Value: 135
-
-Turn off:
-W (87996) GHOME_RENDER: Matter event: 1 Value: 1
-W (88086) GHOME_RENDER: Matter event: 0 Value: 0
-W (88156) GHOME_RENDER: Matter event: 1 Value: 254
-*/
-
 void matter_event_callback(const matter_ui_update_msg_t &msg)
 {
     ESP_LOGW(TAG, "Matter event: %d Value: %d", msg.state_type, msg.value);
